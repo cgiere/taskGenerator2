@@ -1,1 +1,0 @@
-typeSearchIndex = [{"l":"All Classes and Interfaces","u":"allclasses-index.html"},{"p":"csc.edu.taskgenerator2","l":"App"},{"p":"csc.edu.taskgenerator2","l":"Main"},{"p":"csc.edu.taskgenerator2","l":"PrimaryController"},{"p":"csc.edu.taskgenerator2","l":"SecondaryController"},{"p":"csc.edu.taskgenerator2","l":"Task"}];updateSearchResults();

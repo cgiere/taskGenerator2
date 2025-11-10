@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"m":"csc.edu.taskgenerator2","l":"csc.edu.taskgenerator2"}];updateSearchResults();
