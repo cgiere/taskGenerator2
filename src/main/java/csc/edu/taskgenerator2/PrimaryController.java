@@ -50,33 +50,39 @@ implements Initializable {
     static ObservableList<Task> taskList = FXCollections.observableArrayList();
 
     public void initialize(URL url, ResourceBundle rb) {
-        taskList.clear();
+        // Load tasks once (do NOT clear the list)
         Task primaryTask = new Task();
         primaryTask.readFile();
-        this.taskAdderBtn.setOnAction(e -> {
-            if (this.dateField.getValue() != null && !((LocalDate)this.dateField.getValue()).isBefore(LocalDate.now()) && this.taskField.getText() != null) {
-                this.addTaskData((LocalDate)this.dateField.getValue(), this.taskField.getText());
-            } else if (this.dateField.getValue() == null || this.taskField.getText() == null) {
-                this.showAlert();
+
+        taskAdderBtn.setOnAction(e -> {
+            LocalDate date = dateField.getValue();
+            String taskText = taskField.getText();
+
+            if (date != null && !date.isBefore(LocalDate.now()) && taskText != null && !taskText.isBlank()) {
+                addTaskData(date, taskText);
+            } else {
+                showAlert();
             }
         });
-        this.taskListBtn.setOnAction(e -> {
+
+        taskListBtn.setOnAction(e -> {
             try {
-                App.setRoot("secondary");
-            }
-            catch (IOException ex) {
-                ex.getStackTrace();
+                App.setRoot("secondary");  // Switch scene
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         });
     }
 
     public void addTaskData(LocalDate date, String item) {
-        SimpleObjectProperty day = new SimpleObjectProperty((Object)date);
+        SimpleObjectProperty<LocalDate> day = new SimpleObjectProperty<>(date);
         SimpleStringProperty task = new SimpleStringProperty(item);
         SimpleStringProperty status = new SimpleStringProperty("New Task");
-        Task newTask = new Task((ObjectProperty<LocalDate>)day, (StringProperty)task, (StringProperty)status);
-        taskList.add((Object)newTask);
-        newTask.writeToFile();
+
+        Task newTask = new Task(day, task, status);
+        taskList.add(newTask);  // Add to observable list
+        newTask.writeToFile();  // Save to CSV immediately
+
         this.dateField.setValue(null);
         this.taskField.clear();
     }

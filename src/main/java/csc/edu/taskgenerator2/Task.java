@@ -62,53 +62,90 @@ public class Task {
     }
 
     public void writeToFile() {
+        String filePath = "src/main/java/csc/edu/taskgenerator2/tasklist.csv";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
         try {
-            Throwable throwable = null;
-            Object var2_4 = null;
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter("src/main/java/csc/edu/taskgenerator2/tasklist.csv", true));){
-                writer.write(((LocalDate)this.date.get()).toString() + "," + (String)this.task.get() + "," + (String)this.status.get() + "\n");
-                writer.close();
-            }
-            catch (Throwable throwable2) {
-                if (throwable == null) {
-                    throwable = throwable2;
-                } else if (throwable != throwable2) {
-                    throwable.addSuppressed(throwable2);
+            StringBuilder sb = new StringBuilder();
+            boolean updated = false;
+
+            // Read existing tasks
+            if (Files.exists(Paths.get(filePath))) {
+                try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        String[] parts = line.split(",", 3);
+                        if (parts.length != 3) continue;
+
+                        LocalDate fileDate = LocalDate.parse(parts[0], formatter);
+                        String fileTask = parts[1];
+
+                        if (fileDate.equals(this.date.get()) && fileTask.equals(this.task.get())) {
+                            // Update status if task exists
+                            sb.append(this.date.get().toString())
+                            .append(",")
+                            .append(this.task.get())
+                            .append(",")
+                            .append(this.status.get())
+                            .append("\n");
+                            updated = true;
+                        } else {
+                            sb.append(line).append("\n");
+                        }
+                    }
                 }
-                throw throwable;
             }
-        }
-        catch (IOException e) {
+
+            // Append if new task
+            if (!updated) {
+                sb.append(this.date.get().toString())
+                .append(",")
+                .append(this.task.get())
+                .append(",")
+                .append(this.status.get())
+                .append("\n");
+            }
+
+            // Overwrite file
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                writer.write(sb.toString());
+            }
+
+        } catch (IOException e) {
             System.out.println("Error writing tasks to file: " + e.getMessage());
         }
     }
 
+
     public void readFile() {
-        try {
-            Throwable throwable = null;
-            Object var2_4 = null;
-            try (BufferedReader reader = new BufferedReader(new FileReader("src/main/java/csc/edu/taskgenerator2/tasklist.csv"));){
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(",", 3);
-                    if (parts.length != 3) continue;
-                    LocalDate datePart = LocalDate.parse(parts[0], DateTimeFormatter.ISO_LOCAL_DATE);
-                    SimpleStringProperty taskPart = new SimpleStringProperty(parts[1]);
-                    SimpleStringProperty statusPart = new SimpleStringProperty(parts[2]);
-                    Task newTask = new Task((ObjectProperty<LocalDate>)new SimpleObjectProperty((Object)datePart), (StringProperty)taskPart, (StringProperty)statusPart);
-                    PrimaryController.taskList.add((Object)newTask);
-                }
+        String filePath = "src/main/java/csc/edu/taskgenerator2/tasklist.csv";
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",", 3);
+                if (parts.length != 3) continue;
+
+                LocalDate datePart = LocalDate.parse(parts[0], formatter);
+                String taskPart = parts[1];
+                String statusPart = parts[2];
+
+                // Check if task already exists to avoid duplicates
+                boolean exists = PrimaryController.taskList.stream().anyMatch(
+                    t -> t.getDate().get().equals(datePart) && t.getTask().get().equals(taskPart)
+                );
+                if (exists) continue;
+
+                Task newTask = new Task(
+                    new SimpleObjectProperty<>(datePart),
+                    new SimpleStringProperty(taskPart),
+                    new SimpleStringProperty(statusPart)
+                );
+
+                PrimaryController.taskList.add(newTask);
             }
-            catch (Throwable throwable2) {
-                if (throwable == null) {
-                    throwable = throwable2;
-                } else if (throwable != throwable2) {
-                    throwable.addSuppressed(throwable2);
-                }
-                throw throwable;
-            }
-        }
-        catch (IOException | DateTimeParseException e) {
+        } catch (IOException | DateTimeParseException e) {
             System.out.println("Error reading file: " + e.getMessage());
         }
     }
@@ -118,62 +155,39 @@ public class Task {
      * Enabled unnecessary exception pruning
      * Enabled aggressive exception aggregation
      */
+    
     public static void deleteTaskFromFile(ObjectProperty<LocalDate> date, StringProperty taskDescription) {
-        block18: {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            try {
-                Throwable throwable = null;
-                Object var4_7 = null;
-                try {
-                    BufferedReader reader = new BufferedReader(new FileReader("src/main/java/csc/edu/taskgenerator2/tasklist.csv"));
-                    try {
-                        try (BufferedWriter writer = new BufferedWriter(new FileWriter("src/main/java/csc/edu/taskgenerator2/tasklist_temporary.csv"));){
-                            String line;
-                            while ((line = reader.readLine()) != null) {
-                                String[] parts = line.split(",", 3);
-                                if (parts.length != 3) continue;
-                                SimpleObjectProperty fileDate = new SimpleObjectProperty((Object)LocalDate.parse(parts[0], formatter));
-                                SimpleStringProperty fileTaskDescription = new SimpleStringProperty(parts[1]);
-                                if (((LocalDate)fileDate.get()).equals(date.get()) && ((String)fileTaskDescription.get()).equals(taskDescription.get())) continue;
-                                writer.write(line);
-                                writer.newLine();
-                            }
-                        }
-                        if (reader == null) break block18;
-                    }
-                    catch (Throwable throwable2) {
-                        if (throwable == null) {
-                            throwable = throwable2;
-                        } else if (throwable != throwable2) {
-                            throwable.addSuppressed(throwable2);
-                        }
-                        if (reader == null) throw throwable;
-                        reader.close();
-                        throw throwable;
-                    }
-                    reader.close();
-                }
-                catch (Throwable throwable3) {
-                    if (throwable == null) {
-                        throwable = throwable3;
-                        throw throwable;
-                    }
-                    if (throwable == throwable3) throw throwable;
-                    throwable.addSuppressed(throwable3);
-                    throw throwable;
-                }
-            }
-            catch (IOException e) {
-                System.out.println("Error updating file: " + e.getMessage());
-            }
-        }
+        String filePath = "src/main/java/csc/edu/taskgenerator2/tasklist.csv";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        if (!Files.exists(Paths.get(filePath))) return;
+
         try {
-            Files.deleteIfExists(Paths.get("src/main/java/csc/edu/taskgenerator2/tasklist.csv", new String[0]));
-            Files.move(Paths.get("src/main/java/csc/edu/taskgenerator2/tasklist_temporary.csv", new String[0]), Paths.get("src/main/java/csc/edu/taskgenerator2/tasklist.csv", new String[0]), StandardCopyOption.REPLACE_EXISTING);
-            return;
-        }
-        catch (IOException e) {
-            System.out.println("Error replacing file: " + e.getMessage());
+            StringBuilder sb = new StringBuilder();
+
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",", 3);
+                    if (parts.length != 3) continue;
+
+                    LocalDate fileDate = LocalDate.parse(parts[0], formatter);
+                    String fileTask = parts[1];
+
+                    // Keep lines that are NOT the one to delete
+                    if (!(fileDate.equals(date.get()) && fileTask.equals(taskDescription.get()))) {
+                        sb.append(line).append("\n");
+                    }
+                }
+            }
+
+            // Overwrite CSV without the deleted task
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
+                writer.write(sb.toString());
+            }
+
+        } catch (IOException e) {
+            System.out.println("Error deleting task from file: " + e.getMessage());
         }
     }
 }

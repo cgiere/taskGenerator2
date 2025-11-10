@@ -33,62 +33,67 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.ComboBoxTableCell;
 
-public class SecondaryController
-implements Initializable {
-    @FXML
-    Button backButton;
-    @FXML
-    TableView<Task> taskView;
-    @FXML
-    TableColumn<Task, String> taskColumn;
-    @FXML
-    TableColumn<Task, LocalDate> dateColumn;
-    @FXML
-    TableColumn<Task, String> statusColumn;
-    @FXML
-    TableColumn<Task, String> deleteColumn;
+public class SecondaryController implements Initializable {
 
+    @FXML
+    private Button backButton;
+
+    @FXML
+    private TableView<Task> taskView;
+
+    @FXML
+    private TableColumn<Task, String> taskColumn;
+
+    @FXML
+    private TableColumn<Task, LocalDate> dateColumn;
+
+    @FXML
+    private TableColumn<Task, String> statusColumn;
+
+    @FXML
+    private TableColumn<Task, String> deleteColumn;
+
+    @Override
     public void initialize(URL url, ResourceBundle rb) {
         this.taskView.setItems(PrimaryController.taskList);
-        this.taskColumn.setCellValueFactory(task -> ((Task)task.getValue()).getTask());
-        this.dateColumn.setCellValueFactory(date -> ((Task)date.getValue()).getDate());
-        this.statusColumn.setCellValueFactory(status -> ((Task)status.getValue()).getStatus());
-        ObservableList statusOptionsList = FXCollections.observableArrayList((Object[])new String[]{"New Task", "In Progress", "Completed"});
-        this.statusColumn.setCellFactory(ComboBoxTableCell.forTableColumn((ObservableList)statusOptionsList));
-        this.statusColumn.setOnEditCommit(e -> {
-            Task newTask = (Task)e.getRowValue();
-            Task oldTask = (Task)e.getRowValue();
-            oldTask.getStatus().set((Object)((String)e.getOldValue()));
-            Task.deleteTaskFromFile(oldTask.getDate(), oldTask.getTask());
-            newTask.getStatus().set((Object)((String)e.getNewValue()));
-            newTask.writeToFile();
+        this.taskColumn.setCellValueFactory(task -> task.getValue().getTask());
+        this.dateColumn.setCellValueFactory(date -> date.getValue().getDate());
+        this.statusColumn.setCellValueFactory(status -> status.getValue().getStatus());
+
+        // Replace this block with the new one
+        ObservableList<String> statusOptionsList = FXCollections.observableArrayList("New Task", "In Progress", "Completed");
+        this.statusColumn.setCellFactory(ComboBoxTableCell.forTableColumn(statusOptionsList));
+
+        // ← This is the replacement block
+        statusColumn.setOnEditCommit(e -> {
+            Task editedTask = e.getRowValue();
+            editedTask.getStatus().set(e.getNewValue());
+            editedTask.writeToFile(); // Persist change to CSV immediately
         });
-        this.taskView.setEditable(true);
-        this.deleteColumn.setCellFactory(a -> new TableCell<Task, String>(){
+
+        deleteColumn.setCellFactory(a -> new TableCell<Task, String>() {
             Button deleteButton = new Button("Delete");
             {
-                this.deleteButton.setOnAction(b -> {
-                    Task task = (Task)SecondaryController.this.taskView.getItems().get(this.getIndex());
-                    this.getTableView().getItems().remove((Object)task);
+                deleteButton.setOnAction(b -> {
+                    Task task = getTableView().getItems().get(getIndex());
+                    getTableView().getItems().remove(task);
                     Task.deleteTaskFromFile(task.getDate(), task.getTask());
                 });
             }
 
             protected void updateItem(String item, boolean empty) {
-                super.updateItem((Object)item, empty);
-                if (empty) {
-                    this.setGraphic(null);
-                } else {
-                    this.setGraphic((Node)this.deleteButton);
-                }
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : deleteButton);
             }
         });
+
+        this.taskView.setEditable(true);
+
         this.backButton.setOnAction(e -> {
             try {
                 App.setRoot("primary");
-            }
-            catch (IOException ex) {
-                ex.getStackTrace();
+            } catch (IOException ex) {
+                ex.printStackTrace();
             }
         });
     }
